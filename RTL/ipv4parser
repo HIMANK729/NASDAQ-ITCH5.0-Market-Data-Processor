@@ -1,0 +1,87 @@
+module ipv4Parser (
+    input wire clk,
+    input wire rst,
+
+    input wire [7:0] inByte,
+    input wire inValid,
+    input wire inFrameStart,
+    output wire inReady,
+
+    output reg [7:0] outByte,
+    output reg outValid,
+    input wire outReady,
+
+    output reg [31:0] srcIp,
+    output reg [31:0] dstIp,
+    output reg [7:0] protocol,
+    output reg [15:0] totalLength,
+    output reg headerDone
+);
+
+    reg [4:0] byteCount;
+    reg headerState;
+
+    reg [7:0] temp0;
+    reg [7:0] temp1;
+    reg [7:0] temp2;
+
+    assign inReady = 1'b1;
+
+    always @(posedge clk or posedge rst) begin
+        if (rst) begin
+            byteCount   <= 0;
+            headerState <= 0;
+            srcIp       <= 0;
+            dstIp       <= 0;
+            protocol    <= 0;
+            totalLength <= 0;
+            temp0       <= 0;
+            temp1       <= 0;
+            temp2       <= 0;
+            outByte     <= 0;
+            outValid    <= 0;
+            headerDone  <= 0;
+        end
+        else begin
+            outValid   <= 0;
+            headerDone <= 0;
+
+            // New packet starts: arm header state for the
+            // payload bytes that arrive starting next cycle.
+            if (inFrameStart) begin
+                headerState <= 1;
+                byteCount   <= 0;
+            end
+
+            if (inValid) begin
+                if (headerState) begin
+                    case (byteCount)
+                        5'd2:  temp0       <= inByte;
+                        5'd3:  totalLength <= {temp0, inByte};
+                        5'd9:  protocol    <= inByte;
+                        5'd12: temp0       <= inByte;
+                        5'd13: temp1       <= inByte;
+                        5'd14: temp2       <= inByte;
+                        5'd15: srcIp       <= {temp0, temp1, temp2, inByte};
+                        5'd16: temp0       <= inByte;
+                        5'd17: temp1       <= inByte;
+                        5'd18: temp2       <= inByte;
+                        5'd19: begin
+                            dstIp       <= {temp0, temp1, temp2, inByte};
+                            headerDone  <= 1;
+                            headerState <= 0;
+                            byteCount   <= 0;
+                        end
+                    endcase
+
+                    if (byteCount != 5'd19)
+                        byteCount <= byteCount + 1;
+                end
+                else begin
+                    outByte  <= inByte;
+                    outValid <= 1;
+                end
+            end
+        end
+    end
+endmodule
