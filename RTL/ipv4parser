@@ -46,8 +46,7 @@ module ipv4Parser (
             outValid   <= 0;
             headerDone <= 0;
 
-            // New packet starts: arm header state for the
-            // payload bytes that arrive starting next cycle.
+        
             if (inFrameStart) begin
                 headerState <= 1;
                 byteCount   <= 0;
