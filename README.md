@@ -1,4 +1,4 @@
-# Ultra-Low Latency NASDAQ ITCH 5.0 Market Data Processing Pipeline
+# NASDAQ ITCH 5.0 Market Data Processing Pipeline
 
 ## Overview
 
